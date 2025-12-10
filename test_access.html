@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Server Access</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { 
+            padding: 10px 20px; 
+            margin: 5px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        pre { 
+            background-color: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 5px; 
+            overflow-x: auto; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🚀 AI Route Optimizer - Server Test</h1>
+    
+    <div id="status" class="status info">
+        Testing server connection...
+    </div>
+    
+    <div>
+        <button class="btn-primary" onclick="testHealth()">Test Health Endpoint</button>
+        <button class="btn-primary" onclick="testDashboard()">Open Dashboard</button>
+        <button class="btn-success" onclick="testRoute()">Test Route Generation</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        const serverUrl = 'http://localhost:8000';
+        
+        async function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = message;
+        }
+        
+        async function testHealth() {
+            try {
+                updateStatus('🔍 Testing health endpoint...', 'info');
+                const response = await fetch(`${serverUrl}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateStatus('✅ Server is healthy!', 'success');
+                    document.getElementById('results').innerHTML = 
+                        `<h3>Health Check Results:</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    updateStatus(`❌ Health check failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                updateStatus(`❌ Connection failed: ${error.message}`, 'error');
+                document.getElementById('results').innerHTML = 
+                    `<h3>Connection Error:</h3>
+                     <p>Please make sure the server is running on port 8000.</p>
+                     <p>Try running: <code>python run.py</code> in your project directory.</p>`;
+            }
+        }
+        
+        function testDashboard() {
+            updateStatus('🌐 Opening dashboard...', 'info');
+            window.open(`${serverUrl}/dashboard`, '_blank');
+        }
+        
+        async function testRoute() {
+            try {
+                updateStatus('🗺️ Testing route generation...', 'info');
+                const routeRequest = {
+                    start_lat: 28.6139,
+                    start_lng: 77.2090,
+                    end_lat: 28.5355,
+                    end_lng: 77.3910,
+                    travel_mode: "driving"
+                };
+                
+                const response = await fetch(`${serverUrl}/api/v1/optimize-route`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(routeRequest)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatus('✅ Route generated successfully!', 'success');
+                    document.getElementById('results').innerHTML = 
+                        `<h3>Route Generation Results:</h3>
+                         <p><strong>Route ID:</strong> ${data.route_id}</p>
+                         <p><strong>Distance:</strong> ${data.total_distance_km} km</p>
+                         <p><strong>Time:</strong> ${data.total_time_minutes} minutes</p>
+                         <p><strong>AI Model:</strong> ${data.ai_model_used}</p>
+                         <p><strong>Coordinates:</strong> ${data.coordinates.length} points</p>
+                         <p><strong>Confidence:</strong> ${data.confidence_score}</p>`;
+                } else {
+                    const errorData = await response.text();
+                    updateStatus(`❌ Route generation failed: ${response.status}`, 'error');
+                    document.getElementById('results').innerHTML = 
+                        `<h3>Error:</h3><pre>${errorData}</pre>`;
+                }
+            } catch (error) {
+                updateStatus(`❌ Route test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-test on page load
+        window.onload = () => {
+            setTimeout(testHealth, 1000);
+        };
+    </script>
+</body>
+</html>
